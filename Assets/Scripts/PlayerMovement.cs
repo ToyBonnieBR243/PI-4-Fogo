@@ -1,5 +1,6 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Necessário para a nova API
+using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -7,40 +8,82 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
 
+    [Header("Mobile Joystick UI")]
+    [SerializeField] private RectTransform joystickBackground;
+    [SerializeField] private RectTransform joystickHandle;
+    [SerializeField] private float handleRange = 75f;
+
     private Rigidbody2D rb;
     private Vector2 movementInput;
+    private Vector2 joystickInput;
+    private Canvas parentCanvas;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
+
+        if (joystickBackground != null)
+        {
+            parentCanvas = joystickBackground.GetComponentInParent<Canvas>();
+            joystickBackground.gameObject.SetActive(false);
+        }
     }
 
     private void Update()
     {
-        // Reseta o input a cada frame
-        movementInput = Vector2.zero;
-
-        // Verifica se o teclado está conectado e lê as setas / WASD usando o novo Input System
+        Vector2 keyboardInput = Vector2.zero;
         var keyboard = Keyboard.current;
-        if (keyboard == null) return;
 
-        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
-            movementInput.y += 1f;
-        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
-            movementInput.y -= 1f;
-        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
-            movementInput.x -= 1f;
-        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
-            movementInput.x += 1f;
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) keyboardInput.y += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) keyboardInput.y -= 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) keyboardInput.x -= 1f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) keyboardInput.x += 1f;
+        }
 
-        // Normaliza para evitar velocidade diagonal maior
-        movementInput = movementInput.normalized;
+        // Prioriza o joystick se estiver em uso; caso contrário, usa o teclado
+        if (joystickInput.sqrMagnitude > 0.01f)
+            movementInput = joystickInput;
+        else
+            movementInput = keyboardInput.normalized;
     }
 
     private void FixedUpdate()
     {
         rb.MovePosition(rb.position + movementInput * moveSpeed * Time.fixedDeltaTime);
+    }
+
+    // --- Métodos chamados pelos eventos de toque na tela ---
+
+    public void OnTouchDown(BaseEventData data)
+    {
+        if (joystickBackground == null) return;
+
+        PointerEventData pointerData = (PointerEventData)data;
+        joystickBackground.gameObject.SetActive(true);
+        joystickBackground.position = pointerData.position;
+        joystickHandle.anchoredPosition = Vector2.zero;
+    }
+
+    public void OnTouchDrag(BaseEventData data)
+    {
+        if (joystickBackground == null) return;
+
+        PointerEventData pointerData = (PointerEventData)data;
+        float scaleFactor = parentCanvas != null ? parentCanvas.scaleFactor : 1f;
+
+        Vector2 direction = (pointerData.position - (Vector2)joystickBackground.position) / scaleFactor;
+        joystickInput = Vector2.ClampMagnitude(direction / handleRange, 1f);
+        joystickHandle.anchoredPosition = joystickInput * handleRange;
+    }
+
+    public void OnTouchUp(BaseEventData data)
+    {
+        joystickInput = Vector2.zero;
+        if (joystickHandle != null) joystickHandle.anchoredPosition = Vector2.zero;
+        if (joystickBackground != null) joystickBackground.gameObject.SetActive(false);
     }
 }

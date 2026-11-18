@@ -56,6 +56,11 @@ public class PlayerMovement : MonoBehaviour
         rb.MovePosition(rb.position + movementInput * moveSpeed * Time.fixedDeltaTime);
     }
 
+    public void IncreaseSpeed(float amount)
+    {
+        moveSpeed += amount;
+    }
+
     // --- Métodos chamados pelos eventos de toque na tela ---
 
     public void OnTouchDown(BaseEventData data)

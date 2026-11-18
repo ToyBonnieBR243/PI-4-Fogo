@@ -5,7 +5,7 @@ public class PlayerAttack : MonoBehaviour
     [Header("Attack Settings")]
     [SerializeField] private GameObject fireProjectilePrefab; // Prefab do tiro de fogo
     [SerializeField] private float attackInterval = 1.5f;     // Tempo entre os disparos
-    [SerializeField] private float attackRange = 10f;         // Raio de alcance para buscar inimigos
+    [SerializeField] private float attackRange = 20f;         // Raio de alcance para buscar inimigos
     [SerializeField] private float projectileSpeed = 8f;
 
     private float attackTimer;

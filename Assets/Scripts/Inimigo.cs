@@ -8,6 +8,14 @@ public class Enemy : MonoBehaviour
     [SerializeField] private int maxHealth = 3;
     [SerializeField] private float moveSpeed = 3f;
 
+    [Header("Contact Damage")]
+    [SerializeField] private int contactDamage = 10;
+    [SerializeField] private float damageCooldown = 1f;
+    private float lastDamageTime = -999f;
+
+    [Header("Loot")]
+    [SerializeField] private GameObject xpGemPrefab;
+
     private int currentHealth;
     private Transform playerTransform;
     private Rigidbody2D rb;
@@ -62,7 +70,10 @@ public class Enemy : MonoBehaviour
             if (col.gameObject != gameObject && col.CompareTag("Enemy"))
             {
                 Vector2 pushDir = (transform.position - col.transform.position);
-                separation += pushDir.normalized / pushDir.magnitude;
+                if (pushDir.sqrMagnitude > 0.0001f)
+                {
+                    separation += pushDir.normalized / pushDir.magnitude;
+                }
             }
         }
 
@@ -75,7 +86,6 @@ public class Enemy : MonoBehaviour
     {
         currentHealth -= amount;
 
-        // Efeito visual de piscar em branco
         if (spriteRenderer != null && !isFlashing)
         {
             StartCoroutine(FlashRedRoutine());
@@ -91,20 +101,51 @@ public class Enemy : MonoBehaviour
     {
         isFlashing = true;
         spriteRenderer.color = Color.red;
-        yield return new WaitForSeconds(0.1f); // Tempo que fica branco
+        yield return new WaitForSeconds(0.1f);
         spriteRenderer.color = originalColor;
         isFlashing = false;
     }
 
     private void Die()
     {
-        // Avisa o Spawner que um inimigo foi derrotado para contar para a próxima wave
+
+        if (xpGemPrefab != null)
+        {
+            Instantiate(xpGemPrefab, transform.position, Quaternion.identity);
+        }
+
         if (spawner != null)
         {
             spawner.RegisterEnemyDefeated();
         }
 
-        // Aqui você pode adicionar efeitos de morte, som ou drop de XP futuramente
         Destroy(gameObject);
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        TryDealContactDamage(collision.gameObject);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        TryDealContactDamage(other.gameObject);
+    }
+
+    private void TryDealContactDamage(GameObject target)
+    {
+        if (Time.time < lastDamageTime + damageCooldown) return;
+
+        PlayerHealth playerHealth = target.GetComponent<PlayerHealth>();
+        if (playerHealth == null)
+        {
+            playerHealth = target.GetComponentInParent<PlayerHealth>();
+        }
+
+        if (playerHealth != null)
+        {
+            lastDamageTime = Time.time;
+            playerHealth.TakeDamage(contactDamage);
+        }
     }
 }

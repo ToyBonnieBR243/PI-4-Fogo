@@ -13,6 +13,7 @@ public class EnemySpawner : MonoBehaviour
     [Header("Wave & Scaling Settings")]
     [SerializeField] private int enemiesPerWave = 25;        // Quantos inimigos derrotados para subir a wave
     private int currentWave = 1;
+    public int CurrentWave => currentWave;
     private int enemiesDefeatedInCurrentWave = 0;
     private int enemyExtraHealth = 0;                        // Vida extra somada a cada wave
 

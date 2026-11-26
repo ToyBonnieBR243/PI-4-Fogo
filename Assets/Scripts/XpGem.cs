@@ -3,34 +3,48 @@ using UnityEngine;
 public class XpGem : MonoBehaviour
 {
     [SerializeField] private int xpValue = 5;
-    private Transform player;
-    private bool isAttracted = false;
-    private float attractSpeed = 6f;
+    [SerializeField] private float magnetRadius = 3f;
+    [SerializeField] private float moveSpeed = 7f;
+    [SerializeField] private float collectDistance = 0.35f;
+
+    private Transform playerTransform;
+    private bool isMagnetized = false;
 
     private void Start()
     {
-        GameObject p = GameObject.Find("Foguin");
-        if (p != null) player = p.transform;
+        GameObject player = GameObject.Find("Foguin");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
     }
 
     private void Update()
     {
-        if (player == null) return;
+        if (playerTransform == null) return;
 
-        // Se o player chegar perto, o XP puxa na direção dele (estilo Vampire Survivors)
-        float distance = Vector2.Distance(transform.position, player.position);
-        if (distance < 3f) // Raio de atração
+        float distance = Vector2.Distance(transform.position, playerTransform.position);
+
+        if (distance <= magnetRadius)
         {
-            isAttracted = true;
+            isMagnetized = true;
         }
 
-        if (isAttracted)
+        if (isMagnetized)
         {
-            transform.position = Vector2.MoveTowards(transform.position, player.position, attractSpeed * Time.deltaTime);
+            transform.position = Vector2.MoveTowards(
+                transform.position,
+                playerTransform.position,
+                moveSpeed * Time.deltaTime
+            );
 
-            if (distance < 0.3f)
+            if (distance <= collectDistance)
             {
-                GameManager.Instance.AddXP(xpValue);
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.AddXP(xpValue);
+                }
+
                 Destroy(gameObject);
             }
         }

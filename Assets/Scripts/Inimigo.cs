@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Enemy : MonoBehaviour
@@ -14,6 +15,7 @@ public class Enemy : MonoBehaviour
     private float lastDamageTime = -999f;
 
     [Header("Loot")]
+    [SerializeField] private string xpGemAddress = "PontoXP_Prefab";
     [SerializeField] private GameObject xpGemPrefab;
 
     private int currentHealth;
@@ -108,10 +110,9 @@ public class Enemy : MonoBehaviour
 
     private void Die()
     {
-
-        if (xpGemPrefab != null)
+        if (!string.IsNullOrEmpty(xpGemAddress))
         {
-            Instantiate(xpGemPrefab, transform.position, Quaternion.identity);
+            Addressables.InstantiateAsync(xpGemAddress, transform.position, Quaternion.identity);
         }
 
         if (spawner != null)

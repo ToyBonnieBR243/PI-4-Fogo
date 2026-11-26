@@ -1,14 +1,25 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.AddressableAssets;
 
 public class PlayerAttack : MonoBehaviour
 {
     [Header("Attack Settings")]
-    [SerializeField] private GameObject fireProjectilePrefab; // Prefab do tiro de fogo
-    [SerializeField] private float attackInterval = 1.5f;     // Tempo entre os disparos
-    [SerializeField] private float attackRange = 20f;         // Raio de alcance para buscar inimigos
+    [SerializeField] private string fireProjectileAddress = "BolaFogo_Prefab";
+    [SerializeField] private GameObject fireProjectilePrefab; // Fallback opcional
+    [SerializeField] private float attackInterval = 1.5f;
+    [SerializeField] private float attackRange = 20f;
     [SerializeField] private float projectileSpeed = 8f;
 
+    public float AttackInterval => attackInterval;
+
     private float attackTimer;
+
+    public void ReduceCooldown(float amount)
+    {
+        attackInterval = Mathf.Max(0.15f, attackInterval - amount);
+    }
 
     private void Update()
     {
@@ -23,7 +34,6 @@ public class PlayerAttack : MonoBehaviour
 
     private void ShootNearestEnemy()
     {
-        // Encontra todos os objetos com o script Enemy na cena
         Enemy[] enemies = Object.FindObjectsByType<Enemy>(FindObjectsSortMode.None);
         if (enemies.Length == 0) return;
 
@@ -40,18 +50,33 @@ public class PlayerAttack : MonoBehaviour
             }
         }
 
-        // Se encontrou um inimigo no alcance, dispara o projétil
-        if (nearestEnemy != null && fireProjectilePrefab != null)
+        if (nearestEnemy == null) return;
+
+        Vector2 direction = (nearestEnemy.position - transform.position).normalized;
+
+        if (!string.IsNullOrEmpty(fireProjectileAddress))
+        {
+            Addressables.InstantiateAsync(fireProjectileAddress, transform.position, Quaternion.identity).Completed += handle =>
+            {
+                if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
+                {
+                    ApplyVelocity(handle.Result, direction);
+                }
+            };
+        }
+        else if (fireProjectilePrefab != null)
         {
             GameObject proj = Instantiate(fireProjectilePrefab, transform.position, Quaternion.identity);
-            Vector2 direction = (nearestEnemy.position - transform.position).normalized;
+            ApplyVelocity(proj, direction);
+        }
+    }
 
-            // Se o projétil tiver um Rigidbody2D, empurra ele na direção
-            Rigidbody2D projRb = proj.GetComponent<Rigidbody2D>();
-            if (projRb != null)
-            {
-                projRb.linearVelocity = direction * projectileSpeed;
-            }
+    private void ApplyVelocity(GameObject proj, Vector2 direction)
+    {
+        Rigidbody2D projRb = proj.GetComponent<Rigidbody2D>();
+        if (projRb != null)
+        {
+            projRb.linearVelocity = direction * projectileSpeed;
         }
     }
 }

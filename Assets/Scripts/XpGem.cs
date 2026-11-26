@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets;
 
 public class XpGem : MonoBehaviour
 {
@@ -9,6 +11,7 @@ public class XpGem : MonoBehaviour
 
     private Transform playerTransform;
     private bool isMagnetized = false;
+    public static float bonusMagnetRadius = 0f;
 
     private void Start()
     {
@@ -25,7 +28,7 @@ public class XpGem : MonoBehaviour
 
         float distance = Vector2.Distance(transform.position, playerTransform.position);
 
-        if (distance <= magnetRadius)
+        if (distance <= magnetRadius + bonusMagnetRadius)
         {
             isMagnetized = true;
         }
@@ -45,7 +48,10 @@ public class XpGem : MonoBehaviour
                     GameManager.Instance.AddXP(xpValue);
                 }
 
-                Destroy(gameObject);
+                if (!Addressables.ReleaseInstance(gameObject))
+                {
+                    Destroy(gameObject);
+                }
             }
         }
     }

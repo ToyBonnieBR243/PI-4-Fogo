@@ -110,7 +110,8 @@ MonoBehaviour:
   moveSpeed: 5
   contactDamage: 10
   damageCooldown: 1
-  xpGemPrefab: {fileID: 7233727015788366160, guid: 65d18b98d8914774bbca74fedcac6d55, type: 3}
+  xpGemAddress: PontoXP_Prefab
+  xpGemPrefab: {fileID: 0}
 --- !u!50 &8447306684424536276
 Rigidbody2D:
   serializedVersion: 5

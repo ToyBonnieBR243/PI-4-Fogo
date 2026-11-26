@@ -17,6 +17,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 movementInput;
     private Vector2 joystickInput;
     private Canvas parentCanvas;
+    public float MoveSpeed => moveSpeed;
 
     private void Awake()
     {

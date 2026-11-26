@@ -7,8 +7,19 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     private int currentHealth;
 
+    [Header("Auto Regeneration")]
+    [SerializeField] private float regenDelay = 3f;      // Segundos sem levar hit para começar a curar
+    [SerializeField] private float regenInterval = 0.5f; // Intervalo entre cada tick de cura
+    [SerializeField] private int regenAmount = 5;        // Quanto de vida recupera por tick
+
     [Header("UI Reference")]
-    [SerializeField] private Image healthBarFill; // Arraste a imagem verde aqui
+    [SerializeField] private Image healthBarFill; // Arraste o objeto 'frente' aqui no Inspector
+
+    private float lastDamageTime = -999f;
+    private float nextRegenTime = 0f;
+    public int MaxHealth => maxHealth;
+    public int CurrentHealth => currentHealth;
+    public int RegenAmount => regenAmount;
 
     private void Start()
     {
@@ -16,10 +27,26 @@ public class PlayerHealth : MonoBehaviour
         UpdateHealthUI();
     }
 
+    private void Update()
+    {
+        // Só regenera se estiver vivo, com vida abaixo do máximo e após o tempo sem tomar dano
+        if (currentHealth > 0 && currentHealth < maxHealth && Time.time >= lastDamageTime + regenDelay)
+        {
+            if (Time.time >= nextRegenTime)
+            {
+                Heal(regenAmount);
+                nextRegenTime = Time.time + regenInterval;
+            }
+        }
+    }
+
     public void TakeDamage(int amount)
     {
+        if (currentHealth <= 0) return;
+
         currentHealth -= amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        lastDamageTime = Time.time; // Reseta o contador de regeneração ao levar hit
         UpdateHealthUI();
 
         if (currentHealth <= 0)
@@ -43,9 +70,22 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    public void IncreaseMaxHealth(int amount)
+    {
+        maxHealth += amount;
+        Heal(amount); // Também cura o valor ganho
+    }
+
+    public void IncreaseRegen(int amount)
+    {
+        regenAmount += amount;
+    }
+
     private void Die()
     {
-        Debug.Log("Game Over!");
-        // Aqui depois podemos colocar a tela de Game Over
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.TriggerGameOver();
+        }
     }
 }
